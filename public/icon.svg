@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#2563eb"/>
+  <!-- "b64" en mono, blanco -->
+  <text x="256" y="262" text-anchor="middle" dominant-baseline="central"
+        font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace"
+        font-size="206" font-weight="700" fill="#ffffff" letter-spacing="-6">b64</text>
+  <!-- acento inferior: flujo de datos -->
+  <rect x="150" y="356" width="212" height="20" rx="10" fill="#93c5fd"/>
+  <rect x="150" y="356" width="74" height="20" rx="10" fill="#ffffff"/>
+</svg>
