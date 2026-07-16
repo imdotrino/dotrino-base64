@@ -4,8 +4,11 @@
  * y variante URL-safe. 100% en el navegador: nada se sube a ningún servidor.
  */
 import { registerSW } from 'virtual:pwa-register'
-import '@dotrino/support'
+import './lang.js' // debe ir ANTES del topbar: migra 'base64.lang' → 'dotrino.lang'
+import '@dotrino/topbar'
 import '@dotrino/install'
+import { getIdentity } from './services/identity'
+import { getReputation } from './services/reputation'
 import './style.css'
 
 // Recarga cuando el SW nuevo toma control + re-chequeo periódico (CONVENCIONES §3).
@@ -75,8 +78,12 @@ const I18N = {
     fileLabel: 'file',
   },
 }
-const LANG_KEY = 'base64.lang'
-let lang = (localStorage.getItem(LANG_KEY) || (navigator.language || 'es').slice(0, 2)) === 'en' ? 'en' : 'es'
+/* El topbar es el DUEÑO del idioma: lo resuelve y lo persiste en 'dotrino.lang'
+ * (preferencia compartida por todo el ecosistema). La app ya no tiene toggle ni
+ * clave propios: lee el idioma del topbar y escucha su evento 'dotrino-lang'. */
+const topbar = document.querySelector('dotrino-topbar')
+const installEl = document.querySelector('dotrino-install')
+let lang = topbar?.lang === 'en' ? 'en' : 'es'
 const t = () => I18N[lang]
 
 /* ---------------- Estado ---------------- */
@@ -190,25 +197,6 @@ function render() {
   const _ = t()
   const enc = mode === 'encode'
   app.innerHTML = `
-    <header class="topbar">
-      <div class="brand">
-        <img src="/icon.svg" alt="" width="30" height="30" />
-        <span>Base64</span>
-      </div>
-      <div class="actions">
-        <div class="lang" role="group" aria-label="es / en">
-          <button data-lang="es" class="${lang === 'es' ? 'on' : ''}">ES</button>
-          <button data-lang="en" class="${lang === 'en' ? 'on' : ''}">EN</button>
-        </div>
-        <dotrino-install lang="${lang}" data-testid="install"></dotrino-install>
-        <dotrino-support
-          href="https://ko-fi.com/dotrino"
-          repo="imdotrino/dotrino-base64"
-          discord="https://discord.gg/D648uq7cth"
-          lang="${lang}"></dotrino-support>
-      </div>
-    </header>
-
     <main class="wrap">
       <h1 class="tagline">${_.tagline}</h1>
 
@@ -269,9 +257,6 @@ function render() {
 }
 
 function wire() {
-  app.querySelectorAll('[data-lang]').forEach((b) =>
-    b.addEventListener('click', () => { lang = b.dataset.lang; localStorage.setItem(LANG_KEY, lang); document.documentElement.lang = lang; render() }))
-
   app.querySelectorAll('[data-mode]').forEach((b) =>
     b.addEventListener('click', () => {
       mode = b.dataset.mode
@@ -411,5 +396,39 @@ const copyIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 const dlIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>'
 const swapIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>'
 
-document.documentElement.lang = lang
+/* ---------------- Topbar (§5 / §6.1) ---------------- */
+// Tema del modal "Mi perfil": espeja la paleta de la app (ver style.css) para que
+// no desentone con el azul oscuro de Base64.
+const PROFILE_THEME = {
+  '--ccp-bg': '#0b1120', '--ccp-bg-2': '#111a2b', '--ccp-bg-3': '#131c2e', '--ccp-bg-4': '#182238',
+  '--ccp-border': '#243049', '--ccp-text': '#e6edf6', '--ccp-muted': '#8a99b3',
+  '--ccp-accent': '#2563eb', '--ccp-accent-2': '#3b82f6', '--ccp-accent-text': '#ffffff',
+  '--ccp-input-bg': '#0d1526', '--ccp-radius': '16px',
+  '--ccp-font': 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  '--ccp-font-mono': 'ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
+}
+
+if (topbar) {
+  topbar.profileTheme = PROFILE_THEME
+  // Idioma: el topbar manda. <dotrino-install> vive en LIGHT DOM, así que hay que
+  // propagarle el idioma a mano (no lo hereda del componente).
+  topbar.addEventListener('dotrino-lang', (e) => {
+    lang = e.detail?.lang === 'en' ? 'en' : 'es'
+    installEl?.setAttribute('lang', lang)
+    render()
+  })
+}
+installEl?.setAttribute('lang', lang)
+
+// Identidad + reputación: las pide el botón de perfil del topbar (§6.1). Sin vault
+// alcanzable quedan en null y el botón simplemente no abre el modal: la app sigue
+// funcionando entera (codificar/decodificar es 100% local).
+;(async () => {
+  const id = await getIdentity()
+  if (!topbar || !id) return
+  topbar.identity = id
+  const rep = await getReputation()
+  if (rep) topbar.reputation = rep
+})()
+
 render()

@@ -52,6 +52,20 @@
     <script data-goatcounter="https://goat.dotrino.com/count" async src="https://goat.dotrino.com/count.js"></script>
   </head>
   <body>
+    <!-- Topbar estándar del ecosistema (CONVENCIONES §5): marca + volver + idioma +
+         perfil + moneda de support en un solo componente. Vive FUERA de #app a
+         propósito: el render de la app reescribe #app.innerHTML entero y destruiría
+         el componente en cada tecla (parpadeo + reinstalación del "volver"). -->
+    <dotrino-topbar
+      brand="Base64"
+      icon="/icon.svg"
+      brand-href="./"
+      profile
+      support-href="https://ko-fi.com/dotrino"
+      support-repo="imdotrino/dotrino-base64"
+      support-discord="https://discord.gg/D648uq7cth">
+      <dotrino-install slot="end" data-testid="install"></dotrino-install>
+    </dotrino-topbar>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

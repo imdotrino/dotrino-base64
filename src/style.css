@@ -28,30 +28,21 @@ body {
 }
 
 /* ---------------- Topbar ---------------- */
-.topbar {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 10px var(--pad);
-  padding-top: calc(env(safe-area-inset-top) + 10px);
-  background: rgba(11, 17, 32, .82);
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(8px);
+/* La barra es <dotrino-topbar> (@dotrino/topbar, CONVENCIONES §5): no se re-arma
+   a mano. Aquí solo la tematizamos con la paleta de la app y la fijamos arriba
+   (el .bar del componente no es sticky por sí solo). */
+dotrino-topbar {
   position: sticky; top: 0; z-index: 10;
+  --dotrino-topbar-bg: rgba(11, 17, 32, .82);
+  --dotrino-topbar-border: var(--line);
+  --dotrino-topbar-text: var(--text);
+  --dotrino-topbar-muted: var(--muted);
+  --dotrino-topbar-accent: var(--accent);
+  --dotrino-topbar-pad: 10px var(--pad);
+  --dotrino-topbar-font: var(--font);
 }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; min-height: 38px; }
-.brand img { width: 30px; height: 30px; border-radius: 8px; }
-.actions {
-  display: flex; align-items: center; gap: 10px;
-  margin-left: auto; flex-wrap: wrap; justify-content: flex-end;
-}
-.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-.lang button {
-  background: transparent; border: none; color: var(--muted);
-  padding: 5px 11px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700;
-}
-.lang button + button { border-left: 1px solid var(--line); }
-.lang button:hover { color: var(--text); }
-.lang button.on { background: var(--accent); color: #fff; }
-.actions dotrino-install { --cci-bg: transparent; --cci-fg: var(--text); }
+/* <dotrino-install> va en el slot "end" y vive en LIGHT DOM: lo estiliza la app. */
+dotrino-topbar dotrino-install { --cci-bg: transparent; --cci-fg: var(--text); }
 
 /* ---------------- Layout ---------------- */
 .wrap {
