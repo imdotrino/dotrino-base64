@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { execSync } from 'node:child_process'
+import prerender from '@dotrino/prerender/vite'
 
 // Hash del commit del build → <meta name="commit"> (CONVENCIONES-APPS.md §3).
 let commit = 'dev'
@@ -17,6 +18,8 @@ export default defineConfig({
   base: './',
   server: { port: 3300, host: true },
   plugins: [
+    // El HTML llega con contenido para quien lo lee sin ejecutar JavaScript.
+    prerender(),
     commitMeta,
     VitePWA({
       registerType: 'autoUpdate',
