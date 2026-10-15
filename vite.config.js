@@ -33,8 +33,8 @@ export default defineConfig({
         scope: './',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#0b1120',
-        theme_color: '#2563eb',
+        background_color: '#f7fafc',
+        theme_color: '#00658c',
         launch_handler: { client_mode: 'focus-existing' },
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

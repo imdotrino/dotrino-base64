@@ -1,18 +1,20 @@
 :root {
-  --bg: #0b1120;
-  --bg-2: #131c2e;
-  --card: #111a2b;
-  --line: #243049;
-  --text: #e6edf6;
-  --muted: #8a99b3;
-  --accent: #2563eb;
-  --accent-2: #3b82f6;
-  --ok: #22c55e;
-  --err: #f87171;
-  --radius: 16px;
+  /* Colores y fuentes del ecosistema (@dotrino/theme, CONVENCIONES §5): aquí solo se
+     nombran con lo que usa esta hoja. */
+  --bg: var(--dt-bg);
+  --bg-2: var(--dt-bg-2);
+  --card: var(--dt-surface);
+  --line: var(--dt-line-soft);
+  --text: var(--dt-text);
+  --muted: var(--dt-text-dim);
+  --accent: var(--dt-accent);
+  --accent-2: var(--dt-accent-press);
+  --ok: var(--dt-ok);
+  --err: var(--dt-error);
+  --radius: var(--dt-radius);
   --pad: clamp(14px, 4vw, 22px);
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font: var(--dt-font);
+  --mono: var(--dt-font-mono);
 }
 
 * { box-sizing: border-box; }
@@ -24,22 +26,15 @@ body {
   line-height: 1.5;
   -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
-  background-image: radial-gradient(1200px 600px at 80% -10%, rgba(37, 99, 235, .18), transparent 60%);
 }
 
 /* ---------------- Topbar ---------------- */
 /* La barra es <dotrino-topbar> (@dotrino/topbar, CONVENCIONES §5): no se re-arma
-   a mano. Aquí solo la tematizamos con la paleta de la app y la fijamos arriba
+   a mano. Los colores los pone @dotrino/theme; aquí solo se fija arriba
    (el .bar del componente no es sticky por sí solo). */
 dotrino-topbar {
   position: sticky; top: 0; z-index: 10;
-  --dotrino-topbar-bg: rgba(11, 17, 32, .82);
-  --dotrino-topbar-border: var(--line);
-  --dotrino-topbar-text: var(--text);
-  --dotrino-topbar-muted: var(--muted);
-  --dotrino-topbar-accent: var(--accent);
   --dotrino-topbar-pad: 10px var(--pad);
-  --dotrino-topbar-font: var(--font);
 }
 /* <dotrino-install> va en el slot "end" y vive en LIGHT DOM: lo estiliza la app. */
 dotrino-topbar dotrino-install { --cci-bg: transparent; --cci-fg: var(--text); }
@@ -66,7 +61,7 @@ dotrino-topbar dotrino-install { --cci-bg: transparent; --cci-fg: var(--text); }
   transition: background .15s, color .15s;
 }
 .modebar button:hover { color: var(--text); }
-.modebar button.on { background: var(--accent); color: #fff; }
+.modebar button.on { background: var(--accent); color: var(--dt-accent-ink); }
 
 /* ---------------- Options ---------------- */
 .opts { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 14px; }
@@ -100,14 +95,14 @@ dotrino-topbar dotrino-install { --cci-bg: transparent; --cci-fg: var(--text); }
   padding: 12px; font-family: var(--mono); font-size: 13.5px; line-height: 1.55;
   min-height: 120px;
 }
-.area:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, .22); }
-.area.out { background: #0d1526; }
-.area::placeholder { color: #566580; }
+.area:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--dt-accent-tint); }
+.area.out { background: var(--dt-surface-2); }
+.area::placeholder { color: var(--dt-text-faint); }
 .filedrop { padding: 18px; text-align: center; color: var(--muted); }
 
 .error {
-  margin: 0; padding: 12px; background: rgba(248, 113, 113, .1);
-  border: 1px solid rgba(248, 113, 113, .4); border-radius: 12px;
+  margin: 0; padding: 12px; background: var(--dt-error-soft);
+  border: 1px solid var(--dt-error); border-radius: 12px;
   color: var(--err); font-size: 13.5px; min-height: 48px;
   display: flex; align-items: center;
 }
@@ -134,7 +129,7 @@ dotrino-topbar dotrino-install { --cci-bg: transparent; --cci-fg: var(--text); }
 .btn-link { background: transparent; border: none; color: var(--accent); text-decoration: underline; }
 .btn-swap {
   margin: 4px auto; padding: 8px 14px; border-radius: 999px;
-  background: var(--accent); border-color: var(--accent); color: #fff;
+  background: var(--accent); border-color: var(--accent); color: var(--dt-accent-ink);
 }
 .btn-swap svg { width: 18px; height: 18px; }
 .btn-swap:hover { background: var(--accent-2); border-color: var(--accent-2); }

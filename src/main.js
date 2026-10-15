@@ -9,6 +9,7 @@ import '@dotrino/topbar'
 import '@dotrino/install'
 import { getIdentity } from './services/identity'
 import { getReputation } from './services/reputation'
+import '@dotrino/theme/theme.css'
 import './style.css'
 
 // Recarga cuando el SW nuevo toma control + re-chequeo periódico (CONVENCIONES §3).
@@ -399,17 +400,7 @@ const swapIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 /* ---------------- Topbar (§5 / §6.1) ---------------- */
 // Tema del modal "Mi perfil": espeja la paleta de la app (ver style.css) para que
 // no desentone con el azul oscuro de Base64.
-const PROFILE_THEME = {
-  '--ccp-bg': '#0b1120', '--ccp-bg-2': '#111a2b', '--ccp-bg-3': '#131c2e', '--ccp-bg-4': '#182238',
-  '--ccp-border': '#243049', '--ccp-text': '#e6edf6', '--ccp-muted': '#8a99b3',
-  '--ccp-accent': '#2563eb', '--ccp-accent-2': '#3b82f6', '--ccp-accent-text': '#ffffff',
-  '--ccp-input-bg': '#0d1526', '--ccp-radius': '16px',
-  '--ccp-font': 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  '--ccp-font-mono': 'ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
-}
-
 if (topbar) {
-  topbar.profileTheme = PROFILE_THEME
   // Idioma: el topbar manda. <dotrino-install> vive en LIGHT DOM, así que hay que
   // propagarle el idioma a mano (no lo hereda del componente).
   topbar.addEventListener('dotrino-lang', (e) => {
