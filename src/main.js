@@ -149,16 +149,19 @@ function encodeFile(file) {
   reader.readAsArrayBuffer(file)
 }
 
-function decode(text) {
+// Quita espacios y separa un data-URI (`data:<mime>;base64,<payload>`). Sin data-URI,
+// `mime` es '' y `payload` es el texto entero sin espacios.
+function parseDataUri(text) {
   const trimmed = text.replace(/\s+/g, '')
-  if (!trimmed) { output = ''; outBytes = 0; binary = false; decodedMime = ''; return }
-  decodedMime = ''
-  let payload = trimmed
   const m = trimmed.match(/^data:([^;,]+)?(;base64)?,(.*)$/i)
-  if (m) {
-    decodedMime = m[1] || 'application/octet-stream'
-    payload = m[3] || ''
-  }
+  if (!m) return { trimmed, mime: '', payload: trimmed }
+  return { trimmed, mime: m[1] || 'application/octet-stream', payload: m[3] || '' }
+}
+
+function decode(text) {
+  const { trimmed, mime, payload } = parseDataUri(text)
+  if (!trimmed) { output = ''; outBytes = 0; binary = false; decodedMime = ''; return }
+  decodedMime = mime
   if (!RE_B64.test(payload) || payload.length % 4 !== 0) throw new Error('invalid')
   const bytes = b64ToBytes(fromUrlSafe(payload))
   outBytes = bytes.length
@@ -172,7 +175,8 @@ function decode(text) {
   }
 }
 
-function process() {
+// Calcula la salida (y el error) a partir de la entrada actual, sin pintar nada.
+function compute() {
   error = ''
   binary = false
   try {
@@ -186,6 +190,10 @@ function process() {
     output = ''
     outBytes = 0
   }
+}
+
+function process() {
+  compute()
   render()
 }
 
@@ -298,19 +306,7 @@ function wire() {
 
 // Live: actualiza salida sin re-render del textarea (mantiene el foco/curser).
 function processLive() {
-  error = ''
-  binary = false
-  try {
-    if (mode === 'encode' && !fileLoaded) {
-      output = input ? encodeText(input) : ''
-    } else if (mode === 'decode') {
-      decode(input)
-    }
-  } catch {
-    error = t().invalid
-    output = ''
-    outBytes = 0
-  }
+  compute()
   // Actualiza solo salida + contadores sin perder el foco del input.
   const outTa = app.querySelector('#out')
   if (outTa) outTa.value = output
@@ -355,11 +351,9 @@ function copyOut(btn) {
 
 function downloadOut() {
   const text = app.querySelector('#in')?.value ?? input
-  const trimmed = text.replace(/\s+/g, '')
-  let payload = trimmed
-  let mime = 'application/octet-stream'
-  const m = trimmed.match(/^data:([^;,]+)?(;base64)?,(.*)$/i)
-  if (m) { mime = m[1] || mime; payload = m[3] || '' }
+  const parsed = parseDataUri(text)
+  const payload = parsed.payload
+  const mime = parsed.mime || 'application/octet-stream'
   if (!payload) return
   let bytes
   try { bytes = b64ToBytes(fromUrlSafe(payload)) } catch { return }
