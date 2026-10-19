@@ -202,6 +202,16 @@ const app = document.getElementById('app')
 
 function fmt(n) { return n.toLocaleString(lang === 'es' ? 'es-EC' : 'en-US') }
 
+// Contadores de entrada y salida: los usan render() y processLive().
+function inputCount() {
+  const _ = t()
+  return mode === 'encode' ? `${fmt([...input].length)} ${_.chars} · ${fmt(new TextEncoder().encode(input).length)} ${_.bytes}` : `${fmt(input.length)} ${_.chars}`
+}
+function outputCount() {
+  const _ = t()
+  return binary ? `${_.binary} · ${fmt(outBytes)} ${_.bytes}` : `${fmt(output.length)} ${_.chars} · ${fmt(outBytes)} ${_.bytes}`
+}
+
 function render() {
   const _ = t()
   const enc = mode === 'encode'
@@ -226,7 +236,7 @@ function render() {
         <div class="card-head">
           <span class="card-title">${_.input}</span>
           ${fileLoaded ? `<span class="filechip" data-testid="filechip">📎 ${esc(fileLoaded.name)} · ${fmt(fileLoaded.size)} ${_.bytes}</span>` : ''}
-          <span class="count">${enc ? `${fmt([...input].length)} ${_.chars} · ${fmt(new TextEncoder().encode(input).length)} ${_.bytes}` : `${fmt(input.length)} ${_.chars}`}</span>
+          <span class="count">${inputCount()}</span>
         </div>
         ${fileLoaded
           ? `<div class="filedrop"><button class="btn btn-link" data-act="removeFile">✕ ${_.removeFile}</button></div>`
@@ -244,7 +254,7 @@ function render() {
       <section class="card">
         <div class="card-head">
           <span class="card-title">${_.output}</span>
-          <span class="count">${binary ? `${_.binary} · ${fmt(outBytes)} ${_.bytes}` : `${fmt(output.length)} ${_.chars} · ${fmt(outBytes)} ${_.bytes}`}</span>
+          <span class="count">${outputCount()}</span>
         </div>
         ${error
           ? `<p class="error" data-testid="error">${error}</p>`
@@ -316,13 +326,9 @@ function processLive() {
     return
   }
   // refresca contadores
-  const _ = t()
   const counts = app.querySelectorAll('.count')
-  const enc = mode === 'encode'
-  const inCount = enc ? `${fmt([...input].length)} ${_.chars} · ${fmt(new TextEncoder().encode(input).length)} ${_.bytes}` : `${fmt(input.length)} ${_.chars}`
-  const outCount = binary ? `${_.binary} · ${fmt(outBytes)} ${_.bytes}` : `${fmt(output.length)} ${_.chars} · ${fmt(outBytes)} ${_.bytes}`
-  if (counts[0]) counts[0].textContent = inCount
-  if (counts[1]) counts[1].textContent = outCount
+  if (counts[0]) counts[0].textContent = inputCount()
+  if (counts[1]) counts[1].textContent = outputCount()
   // habilita/deshabilita botones de salida
   const copyBtn = app.querySelector('[data-act="copy"]')
   if (copyBtn) copyBtn.disabled = !(output || binary)
