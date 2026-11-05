@@ -84,6 +84,7 @@ const I18N = {
  * clave propios: lee el idioma del topbar y escucha su evento 'dotrino-lang'. */
 const topbar = document.querySelector('dotrino-topbar')
 const installEl = document.querySelector('dotrino-install')
+/** @type {'es' | 'en'} */
 let lang = topbar?.lang === 'en' ? 'en' : 'es'
 const t = () => I18N[lang]
 
@@ -98,29 +99,36 @@ let outBytes = 0           // tamaño en bytes de la salida
 let error = ''
 let binary = false         // la salida decodificada no es texto
 let decodedMime = ''       // mime detectado al decodificar (data: URI)
-let fileLoaded = null      // { name, size, mime } cuando se cargó un archivo (codificar)
+/** @type {{ name: string, size: number, mime: string } | null} */
+let fileLoaded = null      // cuando se cargó un archivo (codificar)
 
 /* ---------------- Base64 (UTF-8 seguro) ---------------- */
+/** @param {Uint8Array} bytes @returns {string} */
 function bytesToB64(bytes) {
   let bin = ''
   const CHUNK = 0x8000
   for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK))
+    bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK)))
   }
   return btoa(bin)
 }
+/** @param {string} b64 @returns {Uint8Array} */
 function b64ToBytes(b64) {
   const bin = atob(b64)
   const bytes = new Uint8Array(bin.length)
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
   return bytes
 }
+/** @param {string} b */
 function toUrlSafe(b) { return b.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') }
+/** @param {string} b */
 function fromUrlSafe(b) { let s = b.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return s }
+/** @param {string} b */
 function wrapLines(b) { return b.replace(/(.{76})/g, '$1\n').replace(/\n$/, '') }
 
 const RE_B64 = /^[A-Za-z0-9+/_-]*={0,2}$/
 
+/** @param {string} text @returns {string} */
 function encodeText(text) {
   const bytes = new TextEncoder().encode(text)
   let b = bytesToB64(bytes)
@@ -131,10 +139,12 @@ function encodeText(text) {
   return b
 }
 
+/** @param {File} file */
 function encodeFile(file) {
   const reader = new FileReader()
   reader.onload = () => {
-    const bytes = new Uint8Array(reader.result)
+    // readAsArrayBuffer: el resultado es un ArrayBuffer.
+    const bytes = new Uint8Array(/** @type {ArrayBuffer} */ (reader.result))
     const raw = bytesToB64(bytes)
     let b = urlSafe ? toUrlSafe(raw) : raw
     if (wrap) b = wrapLines(b)
@@ -151,6 +161,10 @@ function encodeFile(file) {
 
 // Quita espacios y separa un data-URI (`data:<mime>;base64,<payload>`). Sin data-URI,
 // `mime` es '' y `payload` es el texto entero sin espacios.
+/**
+ * @param {string} text
+ * @returns {{ trimmed: string, mime: string, payload: string }}
+ */
 function parseDataUri(text) {
   const trimmed = text.replace(/\s+/g, '')
   const m = trimmed.match(/^data:([^;,]+)?(;base64)?,(.*)$/i)
@@ -158,6 +172,7 @@ function parseDataUri(text) {
   return { trimmed, mime: m[1] || 'application/octet-stream', payload: m[3] || '' }
 }
 
+/** @param {string} text */
 function decode(text) {
   const { trimmed, mime, payload } = parseDataUri(text)
   if (!trimmed) { output = ''; outBytes = 0; binary = false; decodedMime = ''; return }
@@ -198,8 +213,11 @@ function process() {
 }
 
 /* ---------------- UI ---------------- */
-const app = document.getElementById('app')
+const appEl = document.getElementById('app')
+if (!appEl) throw new Error('base64: #app is missing from index.html')
+const app = appEl
 
+/** @param {number} n */
 function fmt(n) { return n.toLocaleString(lang === 'es' ? 'es-EC' : 'en-US') }
 
 // Contadores de entrada y salida: los usan render() y processLive().
@@ -276,14 +294,16 @@ function render() {
 }
 
 function wire() {
-  app.querySelectorAll('[data-mode]').forEach((b) =>
+  const modeBtns = /** @type {NodeListOf<HTMLButtonElement>} */ (app.querySelectorAll('[data-mode]'))
+  modeBtns.forEach((b) =>
     b.addEventListener('click', () => {
-      mode = b.dataset.mode
+      mode = b.dataset.mode || 'encode'
       fileLoaded = null
       process()
     }))
 
-  app.querySelectorAll('[data-opt]').forEach((cb) =>
+  const optBoxes = /** @type {NodeListOf<HTMLInputElement>} */ (app.querySelectorAll('[data-opt]'))
+  optBoxes.forEach((cb) =>
     cb.addEventListener('change', () => {
       const k = cb.dataset.opt
       if (k === 'urlSafe') urlSafe = cb.checked
@@ -292,21 +312,22 @@ function wire() {
       process()
     }))
 
-  const ta = app.querySelector('#in')
+  const ta = /** @type {HTMLTextAreaElement | null} */ (app.querySelector('#in'))
   if (ta) {
     ta.addEventListener('input', () => { input = ta.value; processLive() })
   }
 
-  const file = app.querySelector('#file')
-  if (file) file.addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) { input = ''; encodeFile(f) } })
+  const file = /** @type {HTMLInputElement | null} */ (app.querySelector('#file'))
+  if (file) file.addEventListener('change', () => { const f = file.files?.[0]; if (f) { input = ''; encodeFile(f) } })
 
-  app.querySelectorAll('[data-act]').forEach((el) => {
+  const actBtns = /** @type {NodeListOf<HTMLButtonElement>} */ (app.querySelectorAll('[data-act]'))
+  actBtns.forEach((el) => {
     el.addEventListener('click', () => {
       const act = el.dataset.act
       if (act === 'paste') paste()
       else if (act === 'clear') { input = ''; fileLoaded = null; process() }
       else if (act === 'removeFile') { fileLoaded = null; output = ''; outBytes = 0; process() }
-      else if (act === 'upload') file.click()
+      else if (act === 'upload') file?.click()
       else if (act === 'copy') copyOut(el)
       else if (act === 'download') downloadOut()
       else if (act === 'swap') swap()
@@ -318,7 +339,7 @@ function wire() {
 function processLive() {
   compute()
   // Actualiza solo salida + contadores sin perder el foco del input.
-  const outTa = app.querySelector('#out')
+  const outTa = /** @type {HTMLTextAreaElement | null} */ (app.querySelector('#out'))
   if (outTa) outTa.value = output
   else {
     // la tarjeta de salida puede cambiar entre texto / error / binario → re-render.
@@ -330,9 +351,9 @@ function processLive() {
   if (counts[0]) counts[0].textContent = inputCount()
   if (counts[1]) counts[1].textContent = outputCount()
   // habilita/deshabilita botones de salida
-  const copyBtn = app.querySelector('[data-act="copy"]')
+  const copyBtn = /** @type {HTMLButtonElement | null} */ (app.querySelector('[data-act="copy"]'))
   if (copyBtn) copyBtn.disabled = !(output || binary)
-  const dlBtn = app.querySelector('[data-act="download"]')
+  const dlBtn = /** @type {HTMLButtonElement | null} */ (app.querySelector('[data-act="download"]'))
   if (dlBtn) dlBtn.disabled = !(output || binary)
 }
 
@@ -342,10 +363,11 @@ function paste() {
     input = text
     fileLoaded = null
     process()
-    const ta = app.querySelector('#in'); if (ta) ta.focus()
+    const ta = /** @type {HTMLTextAreaElement | null} */ (app.querySelector('#in')); if (ta) ta.focus()
   }).catch(() => flashError(t().noRead))
 }
 
+/** @param {HTMLElement} btn */
 function copyOut(btn) {
   const data = output
   navigator.clipboard?.writeText(data).then(() => {
@@ -356,7 +378,7 @@ function copyOut(btn) {
 }
 
 function downloadOut() {
-  const text = app.querySelector('#in')?.value ?? input
+  const text = /** @type {HTMLTextAreaElement | null} */ (app.querySelector('#in'))?.value ?? input
   const parsed = parseDataUri(text)
   const payload = parsed.payload
   const mime = parsed.mime || 'application/octet-stream'
@@ -365,7 +387,7 @@ function downloadOut() {
   try { bytes = b64ToBytes(fromUrlSafe(payload)) } catch { return }
   const ext = (mime.split('/')[1] || 'bin').split(';')[0]
   const name = `dotrino-base64.${ext}`
-  const blob = new Blob([bytes], { type: mime })
+  const blob = new Blob([/** @type {Uint8Array<ArrayBuffer>} */ (bytes)], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url; a.download = name
@@ -382,6 +404,7 @@ function swap() {
   process()
 }
 
+/** @param {string} msg */
 function flashError(msg) {
   error = msg
   render()
@@ -389,6 +412,7 @@ function flashError(msg) {
 }
 
 /* ---------------- helpers / iconos ---------------- */
+/** @param {unknown} s */
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const clipIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
 const trashIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"/></svg>'
